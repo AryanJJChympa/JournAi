@@ -9,7 +9,7 @@ const LOCAL_STORAGE_MESSAGES_KEY = "journ_current_messages";
 const Chatbot = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [chatMessages, setChatMessages] = useState([
-    { id: crypto.randomUUID(), role: "model", text: "Hello! I’m Ember 🌿 How are you feeling today?" },
+    { id: crypto.randomUUID(), role: "model", text: "Hello! I’m Aryan 🌿 How are you feeling today?" },
   ]);
   const [chatHistory, setChatHistory] = useState([]);
   const [messageInput, setMessageInput] = useState("");
@@ -23,7 +23,7 @@ const Chatbot = () => {
   const getDefaultBotMessage = () => ({
     id: crypto.randomUUID(),
     role: "model",
-    text: "Hello! I’m Ember 🌿 How are you feeling today?",
+    text: "Hello! I’m Aryan 🌿 How are you feeling today?",
   });
 
   /** Clean AI responses */
