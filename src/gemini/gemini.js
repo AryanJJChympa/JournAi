@@ -18,7 +18,7 @@ export function createChat(mood = "default") {
       role: "user",
       parts: [
         {
-          text: moodPrompts[mood] || moodPrompts.Default
+          text: moodPrompts[mood] || moodPrompts.default
         },
       ],
     },
