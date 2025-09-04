@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Menu, X, SendHorizontal, Bot, User, Trash2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
-import { sendChatMessage } from "../gemini/gemini";
+import { createChat, sendChatMessage } from "../gemini/gemini";
 
 const LOCAL_STORAGE_HISTORY_KEY = "journ_chat_history";
 const LOCAL_STORAGE_MESSAGES_KEY = "journ_current_messages";
@@ -15,7 +15,8 @@ const Chatbot = () => {
   const [messageInput, setMessageInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
-
+  // 🔹 New state for mood selection
+  const [selectedMood, setSelectedMood] = useState("default");
 
   const messagesEndRef = useRef(null);
 
@@ -71,6 +72,48 @@ const Chatbot = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isTyping]);
 
+  /** Handle mood change */
+const handleMoodChange = (newMood) => {
+  const moodName = typeof newMood === "string" ? newMood : "Default";
+
+  // 1️ Save current chat before switching
+  if (chatMessages.some((msg) => msg.role === "user")) {
+    const newHistoryItem = {
+      title:
+        chatMessages.find((m) => m.role === "user")?.text.slice(0, 30) ||
+        `Chat on ${new Date().toLocaleDateString()}`,
+      fullConversation: chatMessages.map((msg) => ({ ...msg })),
+      timestamp: Date.now(),
+    };
+
+    const updatedHistory = [...chatHistory, newHistoryItem];
+    setChatHistory(updatedHistory);
+    localStorage.setItem(LOCAL_STORAGE_HISTORY_KEY, JSON.stringify(updatedHistory));
+  }
+
+  // 2️ Update mood state
+  setSelectedMood(moodName);
+
+  // 3️ Create fresh Gemini chat with new mood prompt
+  createChat(moodName);
+
+  // 4️ Start a new conversation with intro message
+  const introMessage = {
+    id: crypto.randomUUID(),
+    role: "model",
+    text: `Switched to ${moodName} mode 🌿 Let's start fresh!`,
+  };
+
+  setChatMessages([introMessage]);
+  setMessageInput("");
+
+  // 5️ Save new conversation to localStorage
+  localStorage.setItem(
+    LOCAL_STORAGE_MESSAGES_KEY,
+    JSON.stringify([introMessage])
+  );
+};
+
   /** Toggle sidebar */
   const handleToggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
@@ -106,7 +149,7 @@ const Chatbot = () => {
     if (chatMessages.some((msg) => msg.role === "user")) {
       const newHistoryItem = {
         title: chatMessages.find((m) => m.role === "user")?.text.slice(0, 30) || "Untitled",
-        fullConversation: chatMessages.map(msg => ({ ...msg })), // deep copy
+        fullConversation: chatMessages.map((msg) => ({ ...msg })),
         timestamp: Date.now(),
       };
       setChatHistory((prev) => [...prev, newHistoryItem]);
@@ -245,54 +288,72 @@ const Chatbot = () => {
 
       {/* Main Chat Area */}
       <div className="flex flex-col flex-1 h-full relative">
-        <header className="flex-shrink-0 bg-[#1a1a2e]/80 backdrop-blur-md border-b border-white/10 shadow-md p-4 flex justify-between items-center">
+        {/* Header */}
+        <header className="flex-shrink-0 bg-[#1a1a2e]/80 backdrop-blur-md border-b border-white/10 shadow-md p-4 flex flex-col md:flex-row gap-3 md:gap-6 justify-between md:items-center">
           <h1 className="text-xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
             Share your thoughts with Ember 🌿
           </h1>
+
+          {/* 🔹 Mood Selector */}
+          <div className="flex gap-3 items-center">
+            <select
+              value={selectedMood}
+               onChange={(e) => handleMoodChange(e.target.value)}
+              className="bg-gray-900/80 border border-white/10 rounded-lg px-3 py-2 text-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+            >
+              <option value="default">Default</option>
+              <option value="storyTeller">Story Teller</option>
+              <option value="philosophical">Philosophical</option>
+              <option value="studyBuddy">StudyBuddy</option>
+              <option value="motivationalCoach">Motivational Coach</option>
+              <option value="romantic">Romantic</option>
+              <option value="humorous">Humorous</option>
+            </select>
+          </div>
         </header>
 
         {/* Chat Messages */}
-       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-  <AnimatePresence>
-    {chatMessages.map((msg) => (
-      <motion.div
-        key={msg.id}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className={`flex items-start gap-3 p-4 rounded-xl ${msg.role === "user" ? "justify-end" : ""}`}
-      >
-        {msg.role === "model" && <Bot size={24} className="text-purple-400 mt-1" />}
-        <div
-          className={`p-3 rounded-2xl shadow-md whitespace-pre-line ${
-            msg.role === "user"
-              ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-none"
-              : "bg-gray-800/60 backdrop-blur-md border border-white/10 text-gray-200 rounded-bl-none"
-          }`}
-        >
-          {msg.text}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <AnimatePresence>
+            {chatMessages.map((msg) => (
+              <motion.div
+                key={msg.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+                className={`flex items-start gap-3 p-4 rounded-xl ${msg.role === "user" ? "justify-end" : ""}`}
+              >
+                {msg.role === "model" && <Bot size={24} className="text-purple-400 mt-1" />}
+                <div
+                  className={`p-3 rounded-2xl shadow-md whitespace-pre-line ${
+                    msg.role === "user"
+                      ? "bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-br-none"
+                      : "bg-gray-800/60 backdrop-blur-md border border-white/10 text-gray-200 rounded-bl-none"
+                  }`}
+                >
+                  {msg.text}
+                </div>
+                {msg.role === "user" && <User size={24} className="text-pink-400 mt-1" />}
+              </motion.div>
+            ))}
+
+            {/* Typing Indicator */}
+            {isTyping && (
+              <motion.div
+                key="typing-indicator"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex items-center gap-3 p-3 rounded-xl bg-gray-800/60 backdrop-blur-md border border-white/10 text-gray-300 shadow-md w-fit"
+              >
+                <Bot size={20} className="text-purple-400" />
+                <p className="text-sm italic">Ember is typing...</p>
+              </motion.div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </AnimatePresence>
         </div>
-        {msg.role === "user" && <User size={24} className="text-pink-400 mt-1" />}
-      </motion.div>
-    ))}
-
-    {/* TYPING INDICATOR SEPARATE */}
-    {isTyping && (
-      <motion.div
-        key="typing-indicator"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="flex items-center gap-3 p-3 rounded-xl bg-gray-800/60 backdrop-blur-md border border-white/10 text-gray-300 shadow-md w-fit"
-      >
-        <Bot size={20} className="text-purple-400" />
-        <p className="text-sm italic">Ember is typing...</p>
-      </motion.div>
-    )}
-
-    <div ref={messagesEndRef} />
-  </AnimatePresence>
-</div>
 
         {/* Input Box */}
         <div className="flex-shrink-0 py-3 px-3 bg-[#1a1a2e]/80 backdrop-blur-md border-t border-white/10">
