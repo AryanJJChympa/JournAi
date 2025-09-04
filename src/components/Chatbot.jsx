@@ -193,19 +193,22 @@ const handleMoodChange = (newMood) => {
         transition={{ duration: 0.3 }}
         className="relative z-20 flex-shrink-0 flex flex-col h-full bg-[#111122]/80 backdrop-blur-lg border-r border-white/10 shadow-xl"
       >
-        <div className="flex items-center justify-between p-3 border-b border-white/10">
+        <div className="flex items-center justify-between py-[38px] md:p-[18px]  border-b border-white/10">
           <AnimatePresence>
+
             {isSidebarOpen && (
               <motion.h2
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="text-xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent"
+                className="text-xl ml-4 font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent"
               >
                 Journ AI
               </motion.h2>
             )}
+
           </AnimatePresence>
+
           <motion.button
             onClick={handleToggleSidebar}
             className="p-2 rounded-full text-gray-400 hover:bg-gray-800/60 hover:text-white transition"
@@ -214,6 +217,7 @@ const handleMoodChange = (newMood) => {
           >
             {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
           </motion.button>
+
         </div>
 
         {/* Sidebar Content */}
@@ -290,8 +294,8 @@ const handleMoodChange = (newMood) => {
       <div className="flex flex-col flex-1 h-full relative">
         {/* Header */}
         <header className="flex-shrink-0 bg-[#1a1a2e]/80 backdrop-blur-md border-b border-white/10 shadow-md p-4 flex flex-col md:flex-row gap-3 md:gap-6 justify-between md:items-center">
-          <h1 className="text-xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
-            Share your thoughts with Ember 🌿
+          <h1 className="text-lg md:text-xl font-bold bg-gradient-to-r from-pink-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
+            Ember to the Rescue
           </h1>
 
           {/* 🔹 Mood Selector */}
